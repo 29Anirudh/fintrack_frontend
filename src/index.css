@@ -1,0 +1,19 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,100..700;1,100..700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body{
+  /* padding: 5px; */
+  background-color: rgb(13, 1, 28);
+}
+.recharts-wrapper svg:focus,
+.recharts-wrapper svg:focus-visible,
+.recharts-surface:focus,
+.recharts-surface:focus-visible {
+    outline: none !important;
+}
+.date-input::-webkit-calendar-picker-indicator {
+  filter: invert(1); /* white icon on dark background */
+  cursor: pointer;
+}
