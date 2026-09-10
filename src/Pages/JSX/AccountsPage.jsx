@@ -22,7 +22,7 @@ const AccountsPage = () => {
 
     useEffect(() => {
         reloadAccounts();
-    }, [])
+    }, [accountDetails])
 
     async function reloadAccounts() {
         axios.get(`${import.meta.env.VITE_BACKEND_URL}/account/accounts`, {
@@ -78,7 +78,7 @@ const AccountsPage = () => {
         )
     }
     return (
-        <motion.div initial={{ opacity: 0,y:20 }} animate={{ opacity: 1,y:0 }} duration={0.5} className='h-screen pt-[75px] pb-[100px] text-slate-300 flex flex-col items-center gap-4 relative'>
+        <motion.div initial={{ opacity: 0,y:20 }} animate={{ opacity: 1,y:0 }} duration={0.5} className='min-h-[calc(100vh-200px)] mt-[100px] pb-[100px] text-slate-300 flex flex-col items-center gap-4 relative'>
             <div className='w-full text-start'>
                 <h1 className='text-xl font-bold pl-2'>
                     My Accounts
@@ -103,13 +103,13 @@ const AccountsPage = () => {
                 className='flex-1 min-h-0 flex flex-col gap-5 justify-start items-center w-full overflow-y-auto pb-2 '>
                 {filteredAccounts && filteredAccounts.length !== 0 ? (
                     filteredAccounts.map((account, index) => (
-                        <BankAccountCard bankDetails={account} index={index} setDeleteId={setDeleteId} setShowConfirmationBox={setShowDeleteConfirmationBox} />
+                        <BankAccountCard bankDetails={account} key={index} setDeleteId={setDeleteId} setShowConfirmationBox={setShowDeleteConfirmationBox} />
                     ))
                 ) : (
                     <h1 className='text-lg text-slate-400 mt-10'>No Accounts found for you</h1>
                 )}
             </div>
-            <div className='absolute bottom-16 right-4 bg-violet-800 py-3 hover:shadow-lg shadow-violet-500/30 rounded-xl w-14 h-14 flex justify-center items-center hover:scale-105 transition-all' onClick={() => setShowCreateAccount(true)}>
+            <div className='fixed bottom-20 right-4 bg-violet-800 py-3 shadow-lg shadow-violet-500/30 rounded-xl w-14 h-14 flex justify-center items-center hover:scale-105 transition-all' onClick={() => setShowCreateAccount(true)}>
                 <FaPlus size={20} />
             </div>
             <AnimatePresence>

@@ -20,6 +20,7 @@ import EachAccountPage from './Pages/JSX/EachAccountPage'
 import ViewEditTransaction from './Pages/JSX/EditTransaction'
 import axios from 'axios'
 import LoadingPage from './Components/LoadingPage'
+import FriendsPage from './Pages/JSX/FriendsPage'
 
 
 function App() {
@@ -213,6 +214,11 @@ function MainApp({
               update={1}
             />
           }
+        />
+
+        <Route 
+          path='/friends'
+          element={<FriendsPage />}
         />
 
         <Route

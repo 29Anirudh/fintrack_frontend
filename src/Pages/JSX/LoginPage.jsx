@@ -18,6 +18,7 @@ const LoginPage = () => {
         }
     },[])
 
+    const [signingIn,setSigningIn]=useState(false)
     const nav = useNavigate();
 
     const [message, setMessage] = useState({
@@ -58,6 +59,7 @@ const LoginPage = () => {
 
     function handlelogin() {
         if (handleChanges()) {
+            setSigningIn(true)
             setErrorMessage("")
             setResponse(null)
             axios
@@ -73,7 +75,7 @@ const LoginPage = () => {
                 })
                 .catch((err) => {
                     setErrorMessage(err)
-                })
+                }).finally(()=>setSigningIn(false))
         }
     }
 
@@ -249,7 +251,7 @@ const LoginPage = () => {
                             className='px-2 py-3 rounded-lg font-semibold bg-sky-600 w-full shadow-lg shadow-sky-900/20'
                             onClick={handlelogin}
                         >
-                            Sign In <span className='inline-block'>→</span>
+                            {signingIn?"Signing In":"Sign In"} <span className='inline-block'>→</span>
                         </motion.button>
 
                         {/* Create Account */}

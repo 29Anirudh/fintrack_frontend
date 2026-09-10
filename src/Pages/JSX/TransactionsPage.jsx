@@ -74,13 +74,11 @@ const TransactionsPage = ({ setCurrentBankAccount }) => {
       <motion.div className='w-full flex flex-col gap-4' initial={{ opacity: 0,y: 20 }} animate={{ opacity: 1,y: 0 }} transition={{ duration: 0.5 }}>
         <div className='flex justify-between backdrop-blur-lg p-4 bg-white/10 rounded-lg w-full border border-slate-500'>
           {analytics.map((analytic, index) => (
-            <>
-              <div className={`flex flex-col p-1 pr-8 justify-center items-center gap-2 ${analytic.title!=="NET"?"border-r border-white/10":""}`} key={index} >
-                <span className='text-md text-slate-500'>{analytic.title}</span>
-                <span className={`text-2xl font-bold ${analytic.title === "CREDIT" ? "text-green-600" : analytic.title === "DEBIT" ? "text-red-700" : (analytic.title === "NET" && analytic.value >= 0) ? "text-green-600" : "text-red-700"}`}>{analytic.value}</span>
-                {(analytic.title === "CREDIT" || (analytic.title === "NET" && analytic.value >= 0)) ? <div className='text-green-600 ring-1 ring-green-600 rounded-full bg-green-500/20 w-6 h-6 flex justify-center items-center p-2'><FaLongArrowAltDown size={20}/></div> : (<div className='text-red-700 ring-1 ring-red-600 rounded-full bg-red-500/20 w-6 h-6 flex justify-center items-center p-2'><FaLongArrowAltUp/></div>)}
-              </div>
-            </>
+            <div className={`flex flex-col p-1 pr-8 justify-center items-center gap-2 ${analytic.title!=="NET"?"border-r border-white/10":""}`} key={index} >
+              <span className='text-md text-slate-500'>{analytic.title}</span>
+              <span className={`text-2xl font-bold ${analytic.title === "CREDIT" ? "text-green-600" : analytic.title === "DEBIT" ? "text-red-700" : (analytic.title === "NET" && analytic.value >= 0) ? "text-green-600" : "text-red-700"}`}>{analytic.value}</span>
+              {(analytic.title === "CREDIT" || (analytic.title === "NET" && analytic.value >= 0)) ? <div className='text-green-600 ring-1 ring-green-600 rounded-full bg-green-500/20 w-6 h-6 flex justify-center items-center p-2'><FaLongArrowAltDown size={20}/></div> : (<div className='text-red-700 ring-1 ring-red-600 rounded-full bg-red-500/20 w-6 h-6 flex justify-center items-center p-2'><FaLongArrowAltUp/></div>)}
+            </div>
           ))}
         </div>
         <div className='flex w-full bg-transparent border border-white/10 rounded-xl focus-within:scale-105 focus-within:shadow-sm focus-within:shadow-violet-400  transition-all'>
@@ -105,8 +103,8 @@ const TransactionsPage = ({ setCurrentBankAccount }) => {
             </button>
           </div>
         </div>
-        {(filteredTransactions && filteredTransactions.length > 0) ? filteredTransactions.map((transaction) => (
-          <TransactionCardWithFullDetails key={transaction.id} transaction={transaction} setCurrentBankAccount={setCurrentBankAccount} />
+        {(filteredTransactions && filteredTransactions.length > 0) ? filteredTransactions.map((transaction,index) => (
+          <TransactionCardWithFullDetails key={index} transaction={transaction} setCurrentBankAccount={setCurrentBankAccount} />
         )) : (
           <h1 className='text-lg text-slate-400 mt-4'>No Transactions found for you</h1>
         )}

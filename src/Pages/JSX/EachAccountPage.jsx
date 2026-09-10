@@ -62,7 +62,7 @@ const EachAccountPage = () => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className='mt-[70px] pb-[100px] flex flex-col w-full gap-5 text-gray-200 justify-center items-center relative'>
+      className='mt-[100px] pb-[100px] min-h-[calc(100vh-200px)] flex flex-col w-full gap-5 text-gray-200 justify-center items-center relative'>
 
         {accountDetails&&<AccountDetailsCardMain account={accountDetails}/>}
         <div className='flex justify-around w-full'>
@@ -95,7 +95,7 @@ const EachAccountPage = () => {
         )
         
         }
-        <div className='p-4 rounded-full absolute bottom-10 right-5 shadow-lg shadow-blue-500/20 bg-blue-900 hover:scale-[1.05] transition-all cursor-pointer' onClick={()=>navigate('/transactions/add')}>
+        <div className='p-4 rounded-full fixed bottom-12 right-5 shadow-lg shadow-blue-500/20 bg-blue-900 hover:scale-[1.05] transition-all cursor-pointer' onClick={()=>navigate('/transactions/add')}>
           <FaPlus size={25}/>
         </div>
         
