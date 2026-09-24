@@ -1,37 +1,95 @@
 import axios from "axios";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { IoIosPersonAdd } from "react-icons/io";
 import { TiUserAddOutline } from "react-icons/ti";
 import { useNavigate } from "react-router-dom";
 import FriendshipReceivedRequestCard from "../../Components/Friends/FriendshipReceivedRequestCard";
 import FriendshipSentRequestCard from "../../Components/Friends/FriendshipSentRequestCard";
-import { AnimatePresence,motion } from "motion/react";
+import { AnimatePresence,motion, warning } from "motion/react";
 import Search from "../../Components/Friends/Search";
 import { RxCross2 } from "react-icons/rx";
 import AllPeopleSearch from "../../Components/Friends/AllPeopleSearch";
 import PersonCard from "../../Components/Friends/PersonCard";
+import NoSearchValue from "../../Components/Friends/NoSearchValue";
+import LoadingIcon from "../../Components/LoadingIcon";
+import FriendCard from "../../Components/Friends/FriendCard";
+import NoUsersFound from "../../Components/Friends/NoUsersFound";
 
 
 const FriendsPage = () => {
   const navigate=useNavigate();
 
-  const [requestsLoading,setRequestsLoading]=useState(false);
+  const [requestsLoading,setRequestsLoading]=useState(true);
   const [receivedRequests,setReceivedRequests]=useState(null);
   const [sentRequests,setSentRequests]=useState(null);
 
+  const [friendsLoading,setFriendsLoading]=useState(true)
+  const [friends,setFriends]=useState(null)
+  const [filteredFriends,setFilteredFriends]=useState(null)
+
   const [loadingState,setLoadingState]=useState(null)
+
+  const [loadingStateForSearch,setLoadingStateForSearch]=useState(null)
 
   const [seachValue,setSearchValue]=useState('')
 
   const [searchAll,setSearchAll]=useState('')
-
   const [searching,setSearching]=useState(false)
-
   const [searchAllPopup,setSearchAllPopup]=useState(false)
+  const searchController=useRef(null)
+
   const token=localStorage.getItem("token");
 
   const [searchResults,setSearchResults]=useState(null)
+
+  
+
+  useEffect(()=>{
+    fetchFriendRequests();
+    fetchAllFriends();
+  },[])
+
+  useEffect(()=>{
+    setSearching(true)
+    const value=searchAll.trim()
+    if(value.length===0){
+      if(searchController.current){
+        searchController.current.abort();
+      }
+      setSearchResults(null)
+      setSearching(false)
+      return;
+    }
+    const timer=setTimeout(()=>{
+      searchAllPeople(value)
+    },400)
+    return ()=>{
+      clearTimeout(timer)
+    }
+  },[searchAll]);
+
+  async function sendRequest(email,id) {
+    setLoadingStateForSearch({id:id,action:"ADDING"})
+    try{
+      const response=await axios.post(`${import.meta.env.VITE_BACKEND_URL}/friends/createrequest`,{
+        receiversemail:email
+      },{
+        headers:{
+          Authorization:`Bearer ${token}`
+        }
+      })
+      toast.success(response?.data?.msg)
+      deletePersonInResponse(id)
+      fetchFriendRequests()
+    }
+    catch(err){
+      toast.error(err?.response?.data.msg||"Something went wrong")
+    }
+    finally{
+      setLoadingState(null)
+    }
+  }
 
   async function fetchFriendRequests() {
     setRequestsLoading(true)
@@ -45,7 +103,7 @@ const FriendsPage = () => {
         setSentRequests(response.data.sentRequests);
     }
     catch(err){
-        toast.error(err.respose.data.msg);
+        toast.error(err?.response?.data?.msg);
         navigate("/")
     }
     finally{
@@ -131,22 +189,63 @@ const FriendsPage = () => {
   }
 
   async function searchAllPeople(searchAll){
+    const value=searchAll.trim();
+    if(value.length===0){
+      if(searchController.current){
+        searchController.current.abort();
+      }
+      setSearchResults(null)
+      setSearching(false)
+
+      return;
+    }
+    if(searchController.current){
+      searchController.current.abort();
+    }
+    const controller=new AbortController();
+    searchController.current=controller;
+
     setSearching(true)
     try{
-      const response=await axios.get(`${import.meta.env.VITE_BACKEND_URL}/user/searchusers`,{
-        searchValue:searchAll
+      const response=await axios.post(`${import.meta.env.VITE_BACKEND_URL}/user/searchusers`,{
+        searchValue:value
       },{
+        headers:{
+          Authorization:`Bearer ${token}`
+        },
+        signal:controller.signal
+      })
+      if(!controller.signal.aborted){
+        setSearchResults(response.data.list)
+      }
+    }
+    catch(err){
+      if(err.code==="ERR_CANCELED") return;
+      toast.error(err.response?.data?.msg||"Something went wrong");
+    }
+    finally{
+      if(!controller.signal.aborted){
+        setSearching(false)
+      }
+    }
+  }
+
+  async function fetchAllFriends(){
+    setFriendsLoading(true)
+    try{
+      const response=await axios.get(`${import.meta.env.VITE_BACKEND_URL}/friends`,{
         headers:{
           Authorization:`Bearer ${token}`
         }
       })
-      setSearchResults(response.data.list)
+      setFriends(response?.data.list||[]);
+      setFilteredFriends(response?.data.list||[])
     }
     catch(err){
-      toast.error(err.response.data.msg);
+      toast.error(err?.response?.data.msg||"Something went wrong.");
     }
     finally{
-      setSearching(false)
+      setFriendsLoading(false)
     }
   }
 
@@ -158,11 +257,27 @@ const FriendsPage = () => {
       setSentRequests(prev=>prev.filter((_,i)=>i!=index))    }
   }
 
-  
+  function deletePersonInResponse(id){
+    setSearchResults(prev=>prev.filter((person)=>person.id===id && person.status==="SENT"))
+  }
 
-  useEffect(()=>{
-        fetchFriendRequests();
-    },[])
+  function filterFriends(searchFriends) {
+    const value = searchFriends.trim().toLowerCase();
+
+    if (value.length === 0) {
+        setFilteredFriends(friends);
+    } else {
+        setFilteredFriends(
+            friends.filter(
+                (friend) =>
+                    friend.name?.toLowerCase().includes(value) ||
+                    friend.username?.toLowerCase().includes(value)
+            )
+        );
+    }
+  }
+
+  
     
   return (
     <div className='mt-[70px] pb-[100px] p-2 min-h-[calc(100vh-140px)] text-slate-200 flex flex-col gap-4 relative'>
@@ -188,13 +303,13 @@ const FriendsPage = () => {
         <AnimatePresence mode="popLayout" >
           
               {receivedRequests && receivedRequests.map((request,index)=>(
-                <motion.div initial={{y:20,opacity:0}} animate={{y:0,opacity:1}} exit={{opacity:0,x:100}} duration={0.5} layout>
-                  <FriendshipReceivedRequestCard request={request} key={index} index={index} acceptRequest={acceptRequest} rejectRequest={rejectRequest} loadingState={loadingState}/>
+                <motion.div initial={{y:20,opacity:0}} key={index} animate={{y:0,opacity:1}} exit={{opacity:0,x:100}} duration={0.5} layout>
+                  <FriendshipReceivedRequestCard request={request} index={index} acceptRequest={acceptRequest} rejectRequest={rejectRequest} loadingState={loadingState}/>
                 </motion.div>
               ))}
               {sentRequests && sentRequests.map((request,index)=>(
-                <motion.div initial={{y:20,opacity:0}} animate={{y:0,opacity:1}} exit={{opacity:0,x:100}} duration={0.5} layout>
-                  <FriendshipSentRequestCard request={request} key={index} index={index} cancelRequest={cancelRequest} loadingState={loadingState}/>
+                <motion.div initial={{y:20,opacity:0}} key={index} animate={{y:0,opacity:1}} exit={{opacity:0,x:100}} duration={0.5} layout>
+                  <FriendshipSentRequestCard request={request} index={index} cancelRequest={cancelRequest} loadingState={loadingState}/>
                 </motion.div>
               ))
               }
@@ -202,31 +317,51 @@ const FriendsPage = () => {
         </AnimatePresence>
       )
       }
-      <Search/>
+      <Search filterFriends={filterFriends}/>
+      <AnimatePresence mode="popLayout">
+        {
+          friendsLoading ?
+          <div className="w-full flex justify-center items-center min-h-36">
+            <LoadingIcon color="violet-700" height="5" width="5"/>
+          </div>
+          :
+           (
+            filteredFriends?.map((friend,id)=>(
+              <motion.div key={friend.id} initial={{y:20,opacity:0}} animate={{y:0,opacity:1}} transition={{duration:0.5}}>
+                <FriendCard friendDetails={friend}/>
+              </motion.div>
+            ))
+            
+            (filteredFriends?.length===0 && null)
+            
+          )
+        }
+      </AnimatePresence>
       <AnimatePresence mode="popLayout">
         {
           searchAllPopup && 
           (
-            <div className="flex flex-col w-[90%] bg-white/10 backdrop-blur-lg fixed p-4 top-[25%] left-5 gap-6 rounded-2xl z-10">
+            <motion.div initial={{opacity:0,scale:0.5}} animate={{opacity:1,scale:1}} exit={{opacity:0,scale:0}} duration={50} className="flex flex-col w-[90%] bg-white/10 backdrop-blur-lg fixed p-4 top-[25%] left-5 gap-6 rounded-2xl z-10">
               <div className="flex justify-between items-center w-full">
                 <h2>Add Friend</h2>
-                <RxCross2 size={15}/>
+                <RxCross2 size={15} onClick={()=>{setSearchAllPopup(false);setSearchAll("")}}/>
               </div>
-              <AllPeopleSearch searchAll={searchAll} setSearchAll={setSearchAll}/>
+              <AllPeopleSearch searchAll={searchAll} setSearchAll={setSearchAll} searchAllPeople={searchAllPeople}/>
               {
                 searching?
-                (<div className="flex justify-center items-center min-h-20">
+                (<div className="flex justify-center items-center min-h-36">
                   <div className="h-6 w-6 border-violet-600 border-2 border-b-transparent rounded-full animate-spin"></div>
                 </div>):
                 (
                   searchResults?.map((person,index)=>(
-                    <PersonCard userDetails={person}/>
+                    <PersonCard userDetails={person} key={index} loadingStateForSearch={loadingStateForSearch} sendRequest={sendRequest}/>
                   ))
                 )
               }
-            </div>
+              {!searching && (searchAll.trim().length===0 ?  <NoSearchValue/>:searchResults?.length===0 && <NoUsersFound/>)}
+              
+            </motion.div>
           )
-
         }
       </AnimatePresence>
 
