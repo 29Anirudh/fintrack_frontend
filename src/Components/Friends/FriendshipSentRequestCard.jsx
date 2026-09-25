@@ -1,6 +1,6 @@
 import React from 'react'
 import { RiCloseFill } from 'react-icons/ri';
-import { FaClockRotateLeft } from "react-icons/fa6";
+import { FaRegClock } from "react-icons/fa";
 
 const FriendshipSentRequestCard = ({request,index}) => {
   const colors = [
@@ -22,8 +22,8 @@ const FriendshipSentRequestCard = ({request,index}) => {
                   <div className='rounded-full p-2 w-14 h-14 flex items-center justify-center text-lg font-semibold' style={{ backgroundColor:getRandomColor()}}>{request?.name.substring(0, 1)}</div>
                   <div className="flex flex-col justify-center ml-3">
                       <span className="font-semibold">{request.name}</span>
-                      <span className="text-slate-400 text-sm">{request.username}</span>
-                      <span className='bg-sky-400/20 text-sky-400 w-20 flex gap-1 p-1 text-xs items-center justify-center rounded-xl mt-1'><FaClockRotateLeft size={10}/>Pending</span>
+                      <span className="text-slate-500 text-xs">{request.username}</span>
+                      <span className='bg-sky-400/20 text-sky-300 w-20 flex gap-1 p-1 text-xs items-center justify-center rounded-xl mt-1'><FaRegClock size={10}/>Pending</span>
                   </div>
               </div>
               <div className="flex items-center justify-center gap-2">
