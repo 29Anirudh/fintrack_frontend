@@ -52,8 +52,8 @@ const FriendCard = ({friendDetails}) => {
                     <span className='text-xs text-slate-400'>{friendDetails?.username}</span>
                 </div>
                 <div className={`flex text-xs border rounded-2xl h-[30%] px-2 py-1 justify-center items-center ${friendDetails?.totalExpenseAmount>0?"bg-green-500/10 text-green-500 border-green-800":friendDetails?.totalExpenseAmount<0?"bg-red-500/10 text-red-500 border-red-900":"bg-sky-600/10 text-sky-400 border-sky-700"}`}>
-                    {friendDetails?.totalExpenseAmount>0?(<><FaArrowDownLong/><span>Owes you ₹{friendDetails?.totalExpenseAmount}</span></>):friendDetails?.totalExpenseAmount<0?(
-                        <><FaArrowUpLong/><span>You owe ₹{Math.abs(friendDetails?.totalExpenseAmount)}</span></>
+                    {friendDetails?.totalExpenseAmount>0?(<><FaArrowDownLong size={10}/><span className="ml-1">Owes you ₹{friendDetails?.totalExpenseAmount}</span></>):friendDetails?.totalExpenseAmount<0?(
+                        <><FaArrowUpLong size={10}/><span className="ml-1">You owe ₹{Math.abs(friendDetails?.totalExpenseAmount)}</span></>
                     ):<><RiCheckDoubleFill size={10}/> Settled</>}
                 </div>
             </div>

@@ -15,6 +15,7 @@ import NoSearchValue from "../../Components/Friends/NoSearchValue";
 import LoadingIcon from "../../Components/LoadingIcon";
 import FriendCard from "../../Components/Friends/FriendCard";
 import NoUsersFound from "../../Components/Friends/NoUsersFound";
+import { RiUserUnfollowFill } from "react-icons/ri";
 
 
 const FriendsPage = () => {
@@ -32,7 +33,7 @@ const FriendsPage = () => {
 
   const [loadingStateForSearch,setLoadingStateForSearch]=useState(null)
 
-  const [seachValue,setSearchValue]=useState('')
+  const [searchValue,setSearchValue]=useState('')
 
   const [searchAll,setSearchAll]=useState('')
   const [searching,setSearching]=useState(false)
@@ -68,6 +69,10 @@ const FriendsPage = () => {
       clearTimeout(timer)
     }
   },[searchAll]);
+
+  useEffect(()=>{
+    filterFriends(searchValue)
+  },[searchValue])
 
   async function sendRequest(email,id) {
     setLoadingStateForSearch({id:id,action:"ADDING"})
@@ -239,7 +244,14 @@ const FriendsPage = () => {
         }
       })
       setFriends(response?.data.list||[]);
-      setFilteredFriends(response?.data.list||[])
+      if(searchValue.trim().length!==0){
+        filterFriends(searchValue) 
+      }
+      else{
+        setFilteredFriends(response?.data.list)
+      }
+
+      
     }
     catch(err){
       toast.error(err?.response?.data.msg||"Something went wrong.");
@@ -263,7 +275,6 @@ const FriendsPage = () => {
 
   function filterFriends(searchFriends) {
     const value = searchFriends.trim().toLowerCase();
-
     if (value.length === 0) {
         setFilteredFriends(friends);
     } else {
@@ -317,7 +328,7 @@ const FriendsPage = () => {
         </AnimatePresence>
       )
       }
-      <Search filterFriends={filterFriends}/>
+      <Search setSearchValue={setSearchValue} searchValue={searchValue}/>
       <AnimatePresence mode="popLayout">
         {
           friendsLoading ?
@@ -325,16 +336,21 @@ const FriendsPage = () => {
             <LoadingIcon color="violet-700" height="5" width="5"/>
           </div>
           :
-           (
-            filteredFriends?.map((friend,id)=>(
+            filteredFriends?.length!==0 ?
+            filteredFriends?.map((friend)=>(
               <motion.div key={friend.id} initial={{y:20,opacity:0}} animate={{y:0,opacity:1}} transition={{duration:0.5}}>
                 <FriendCard friendDetails={friend}/>
               </motion.div>
-            ))
+            )):
+            (<div className="flex flex-col gap-2 mt-10 justify-center items-center text-slate-400">
+              <div className="bg-white/10 p-4 rounded-full"><RiUserUnfollowFill/></div>
+              <span className="">No Friends yet</span>
+              <span className="text-xs">Add friends to start sharing expenses</span>
+              <button className='flex gap-1 items-center justify-center text-white bg-blue-600 rounded-xl p-1 text-sm cursor-pointer hover:bg-blue-800 transition-colors' onClick={()=>setSearchAllPopup(true)}>
+                <IoIosPersonAdd size={20}/> Add Friend
+              </button>
+            </div>)
             
-            (filteredFriends?.length===0 && null)
-            
-          )
         }
       </AnimatePresence>
       <AnimatePresence mode="popLayout">
