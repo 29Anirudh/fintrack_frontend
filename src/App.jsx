@@ -21,6 +21,8 @@ import ViewEditTransaction from './Pages/JSX/EditTransaction'
 import axios from 'axios'
 import LoadingPage from './Components/LoadingPage'
 import FriendsPage from './Pages/JSX/FriendsPage'
+import ExpenseSplit from './Pages/ExpenseSplit'
+import ExpenseSplitEach from './Pages/ExpenseSplitEach'
 
 
 function App() {
@@ -205,6 +207,16 @@ function MainApp({
             <ViewEditTransaction />
           }
         />
+
+        <Route 
+          path='/splits'
+          element={
+            <ExpenseSplit/>
+          }
+        />
+
+        <Route path='/splits/:id' element={<ExpenseSplitEach/>}/>
+
 
         <Route
           path="/transactions/edit/:id"
