@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import LoadingPage from '../Components/LoadingPage';
 
 import { AnimatePresence,motion } from 'motion/react';
+import EachUserPaymentCard from '../Components/ExpenseSplit/EachUserPaymentCard';
 
 const ExpenseSplitEach = () => {
     const {id}=useParams();
@@ -14,9 +15,25 @@ const ExpenseSplitEach = () => {
     const [expenseDetails,setExpenseDetails]=useState(null)
     const [expenseSplitLoading,setExpenseSplitLoading]=useState(true);
 
+    const[loadingItems,setLoadingItems]=useState(null)
+
+    const [myUserPayment,setMyUserPayment]=useState(null);
+
+    const [cardOpen,setCardOpen]=useState(false)
+
+    const [paymentRecord,setPaymentRecord]=useState({
+        personsUsername,
+        amount,
+        splitId,
+        isThereATransaction,
+        maskedAccountno
+    });
+
     const [formattedDate,setFormattedDate]=useState(null)
 
     const token=localStorage.getItem("token")
+
+    const [isLoggedInUserOwner,setIsLoggedInUserOwner]=useState(false)
 
     async function getExpenseSplitById(splitId){
         setExpenseSplitLoading(true)
@@ -32,6 +49,8 @@ const ExpenseSplitEach = () => {
                 month:"short",
                 year:"numeric"
             })
+            setMyUserPayment(response?.data?.details?.eachUserPayments.filter((eachUserPayment)=>eachUserPayment.name==="You"))
+            setIsLoggedInUserOwner(response?.data?.details?.eachUserPayments.find((eachUserPayment)=>eachUserPayment.name==="You"&&eachUserPayment.isOwner===true)?true:false)
             setFormattedDate(formattedDate)
         }
         catch(err){
@@ -43,7 +62,48 @@ const ExpenseSplitEach = () => {
         }
     }
 
-    
+    async function markAsPaid(eachUserPaymentId) {
+        setPaymentRecord(prev=>({
+            ...prev,
+            splitId:expenseDetails.spltiId,
+        }))
+        setLoadingItems(
+            {
+                id:eachUserPaymentId,
+                action:"MarkAsPaid"
+            }
+        )
+        if(!checkPaymentRecord()){
+            return;
+        }
+        try{
+            const response=await axios.post(`${import.meta.env.VITE_BACKEND_URL}/split/markaspaid`,paymentRecord,{
+                headers:{
+                    Authorization:`Bearer ${token}`
+                }
+            })
+            toast.success(response?.data?.msg);
+        }catch(err){
+            toast.error(err?.response?.data.msg||"Something went wrong.")
+            setCardOpen(false)
+        }
+        finally{
+            setLoadingItems(null)
+        }
+    }
+
+    function checkPaymentRecord(){
+        if(paymentRecord.maskedAccountno.trim().length===0){
+            toast.error("Select any account.")
+            return false;
+        }
+        if(paymentRecord.personsUsername.trim().length===0 || paymentRecord.amount<=0 || paymentRecord.splitId.trim().length===0){
+            toast.error("Re-login once");
+            navigate("/login")
+            return false;
+        }
+        return true;
+    }
 
     useEffect(()=>{
         getExpenseSplitById(id);
@@ -82,6 +142,14 @@ const ExpenseSplitEach = () => {
         </motion.div>
         <div className='flex flex-col gap-2 '>
             <span className='text-slate-300 font-semibold'>PARTICIPANTS</span>
+            <motion.div initial={{opacity:0.6,y:20}} animate={{opacity:1,y:0}} className='bg-gray-900'>
+                <EachUserPaymentCard eachUserPayment={myUserPayment[0]} isLoggedInUserOwner={isLoggedInUserOwner} loadingItems={loadingItems} setPaymentRecord={setPaymentRecord} markAsPaid={markAsPaid} cardOpen={cardOpen} setCardOpen={setCardOpen}/>
+            </motion.div>
+            {expenseDetails?.eachUserPayments.map((eachUserPayment,index)=>(
+                <motion.div initial={{opacity:0.6,y:20}} animate={{opacity:1,y:0}} className='bg-gray-900' key={index}>
+                    {eachUserPayment.name!=="You" && <EachUserPaymentCard eachUserPayment={eachUserPayment} loadingItems={loadingItems} isLoggedInUserOwner={isLoggedInUserOwner} setPaymentRecord={setPaymentRecord} markAsPaid={markAsPaid} cardOpen={cardOpen} setCardOpen={setCardOpen}/> }
+                </motion.div>
+            ))}
         </div>
     </div>
   )

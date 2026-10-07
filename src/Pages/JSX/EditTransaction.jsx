@@ -56,7 +56,7 @@ const ViewEditTransaction = ({ update = 0 }) => {
         if (token != null) {
             axios.get(`${import.meta.env.VITE_BACKEND_URL}/account/basicdetails`, {
                 headers: {
-                    Authorization: `Bearer ${token}`
+                    Authorization: `Bearer ${token}`    
                 }
             }).then((res) => {
                 setBasicAccountDetails(res.data.details)
