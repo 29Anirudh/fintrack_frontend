@@ -23,6 +23,7 @@ import LoadingPage from './Components/LoadingPage'
 import FriendsPage from './Pages/JSX/FriendsPage'
 import ExpenseSplit from './Pages/ExpenseSplit'
 import ExpenseSplitEach from './Pages/ExpenseSplitEach'
+import ExpenseSplitNew from './Pages/ExpenseSplitNew'
 
 
 function App() {
@@ -216,6 +217,8 @@ function MainApp({
         />
 
         <Route path='/splits/:id' element={<ExpenseSplitEach/>}/>
+
+        <Route path='/splits/new' element={<ExpenseSplitNew update={0} />}/>
 
 
         <Route

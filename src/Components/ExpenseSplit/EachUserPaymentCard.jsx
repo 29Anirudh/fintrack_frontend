@@ -1,14 +1,15 @@
 import { CiClock2 } from 'react-icons/ci'
 import { LuCrown } from 'react-icons/lu'
 import { LiaCheckDoubleSolid } from "react-icons/lia";
-import { useState } from 'react';
-const EachUserPaymentCard = ({eachUserPayment,isLoggedInUserOwner,markAsPaid,setPaymentRecord,setCardOpen,cardOpen,loadingItems}) => {
-  const markAsPaidLoading=loadingItems.action==="MarkAsPaid" && loadingItems.id===eachUserPayment.id;
+import { useEffect, useState } from 'react';
+import { AnimatePresence,motion } from 'motion/react';
+import LoadingIcon from '../LoadingIcon';
+import toast from 'react-hot-toast';
 
-  const [basicAccountDetails,setBasicAccountDetails]=useState(null)
-  const [basicAccountDetailsLoading,setBasicAccountDetailsLoading]=useState(false)
+const EachUserPaymentCard = ({eachUserPayment,cardDetails2,setCardDetails2,isLoggedInUserOwner,setCardDetails,cardDetails,loadingItems}) => {
+  const markAsPaidLoading=loadingItems?.action==="MarkAsPaid" && loadingItems?.id===eachUserPayment.id;
 
-  const[selectedMaskedAccountNo,setSelectedMaskedAccountno]=useState(null)
+  const[selectedMaskedAccountNo,setSelectedMaskedAccountno]=useState("")
   const [isThereATransaction,setIsThereATransaction]=useState(false)
 
   const colors=[
@@ -19,7 +20,7 @@ const EachUserPaymentCard = ({eachUserPayment,isLoggedInUserOwner,markAsPaid,set
     },
     {
       status:"AWAITING_CONFIRMATION",
-      color:"border-orange-800 bg-orange-600/20 text-orange-600",
+      color:"border-yellow-800 bg-yellow-600/20 text-yellow-600",
       icon:<CiClock2/>
     },
     {
@@ -33,34 +34,6 @@ const EachUserPaymentCard = ({eachUserPayment,isLoggedInUserOwner,markAsPaid,set
       icon:<LiaCheckDoubleSolid/>
     },
   ]
-  async function loadBankAccounts(){
-    setBasicAccountDetailsLoading(true)
-    try{
-      const response= await axios.get(`${import.meta.env.VITE_BACKEND_URL}/account/basicdetails`, {
-              headers: {
-                  Authorization: `Bearer ${token}`    
-              }
-      })
-      setBasicAccountDetails(res.data.details)
-    }
-    catch(err){
-      toast.error(err.response.data.msg||"Something went wrong");
-      setCardOpen(false)
-    }finally{
-      setBasicAccountDetailsLoading(false)
-    }
-  }
-
-  function paymentRecordSetting(){
-    setPaymentRecord(prev=>({
-      ...prev,
-      personsUsername:eachUserPayment?.username,
-      amount:eachUserPayment?.shareAmount,
-      isThereATransaction:isThereATransaction,
-      maskedAccountno:selectedMaskedAccountNo
-    }))
-  }
-
   const color=colors.find((box)=>box.status===eachUserPayment.eachPaymentStatus)?.color;
   const icon=colors.find((box)=>box.status===eachUserPayment.eachPaymentStatus)?.icon;
   return (
@@ -84,8 +57,33 @@ const EachUserPaymentCard = ({eachUserPayment,isLoggedInUserOwner,markAsPaid,set
                   {icon}{eachUserPayment?.eachPaymentStatus}
                 </div>
                 {eachUserPayment?.eachPaymentStatus==="PENDING"  ?
-                (<button className='bg-violet-700 font-semibold px-2 rounded-lg py-1'>Mark as Received</button>)  :
-                (eachUserPayment?.eachPaymentStatus==="AWAITING_CONFIRMATION" && <div className='flex gap-2 font-bold'><button className='bg-red-600/30 text-red-500 w-6 h-6 hover:scale-[1.05] transition-all'>✗</button><button className='bg-green-600/30 text-green-500 w-6 h-6 hover:scale-[1.05] transition-all'>✓</button></div>)
+                (<button className='bg-violet-700 font-semibold px-2 rounded-lg py-1' onClick={()=>{
+                  setCardDetails({
+                    ...cardDetails,
+                    methodName:"received",
+                    cardOpen:true,
+                    eachUserPayment:eachUserPayment
+                  });
+                }}>Mark as Received</button>)  :
+                (eachUserPayment?.eachPaymentStatus==="AWAITING_CONFIRMATION" && 
+                  <div className='flex gap-2 font-bold'>
+                    <button className='bg-red-600/30 text-red-500 w-6 h-6 hover:scale-[1.05] transition-all' onClick={()=>{
+                      setCardDetails2({
+                        ...cardDetails2,
+                        methodName:"rejectPayment",
+                        cardOpen:true,
+                        eachUserPayment:eachUserPayment
+                      })
+                    }}>✗</button>
+                    <button className='bg-green-600/30 text-green-500 w-6 h-6 hover:scale-[1.05] transition-all' onClick={()=>{
+                      setCardDetails2({
+                        ...cardDetails2,
+                        methodName:"confirmPayment",
+                        cardOpen:true,
+                        eachUserPayment:eachUserPayment
+                      })
+                    }}>✓</button>
+                  </div>)
                 }
               </div>
             ):
@@ -94,10 +92,28 @@ const EachUserPaymentCard = ({eachUserPayment,isLoggedInUserOwner,markAsPaid,set
             <div className='flex justify-end gap-2'>
               {eachUserPayment?.name==="You" ? (
                 eachUserPayment?.eachPaymentStatus==="PENDING"  ?  (<button className='bg-violet-700 font-semibold px-2 rounded-lg py-1' onClick={()=>{
-                  paymentRecordSetting();
-                  markAsPaid(eachUserPayment.id)
+                  setCardDetails({
+                    ...cardDetails,
+                    methodName:"paid",
+                    cardOpen:true,
+                    eachUserPayment:eachUserPayment
+                  });
                 }}>Mark as Paid</button>)  :
-                eachUserPayment?.eachPaymentStats==="REJECTED" ? (<button className='bg-violet-700 font-semibold px-2 rounded-lg py-1'>Mark as Paid again</button>):
+                eachUserPayment?.eachPaymentStatus==="REJECTED" ? (
+                  <div className='flex gap-2'>
+                    <div className={`flex gap-1 border ${color} rounded-lg items-center px-2 font-semibold `}>
+                      {icon}{eachUserPayment?.eachPaymentStatus}
+                    </div>
+                    <button className='bg-violet-700 font-semibold px-2 rounded-lg py-1' onClick={()=>{
+                      setCardDetails({
+                        ...cardDetails,
+                        methodName:"paid",
+                        cardOpen:true,
+                        eachUserPayment:eachUserPayment
+                      });
+                    }}>Mark as Paid again</button>
+                  </div>
+                ):
                 (<div className={`flex gap-1 border ${color} rounded-lg items-center px-2 font-semibold `}>
                   {icon}{eachUserPayment?.eachPaymentStatus}
                 </div>)
@@ -106,8 +122,6 @@ const EachUserPaymentCard = ({eachUserPayment,isLoggedInUserOwner,markAsPaid,set
                   {icon}{eachUserPayment?.eachPaymentStatus}
                 </div>
               )}
-              
-              
             </div>)
           }
             
@@ -118,3 +132,4 @@ const EachUserPaymentCard = ({eachUserPayment,isLoggedInUserOwner,markAsPaid,set
 }
 
 export default EachUserPaymentCard
+

@@ -7,6 +7,13 @@ import LoadingPage from '../Components/LoadingPage';
 
 import { AnimatePresence,motion } from 'motion/react';
 import EachUserPaymentCard from '../Components/ExpenseSplit/EachUserPaymentCard';
+import Dropdown from '../Components/ExpenseSplit/Dropdown';
+import Dropdown2 from '../Components/ExpenseSplit/Dropdown2';
+
+import { MdOutlineEdit } from "react-icons/md";
+import { AiTwotoneDelete } from "react-icons/ai";
+import { RiDeleteBin5Line } from "react-icons/ri";
+import { each } from 'chart.js/helpers';
 
 const ExpenseSplitEach = () => {
     const {id}=useParams();
@@ -19,14 +26,34 @@ const ExpenseSplitEach = () => {
 
     const [myUserPayment,setMyUserPayment]=useState(null);
 
-    const [cardOpen,setCardOpen]=useState(false)
+    const [deleting,setDeleting]=useState(false)
 
+    const [cardDetails,setCardDetails]=useState({
+        methodName:"",
+        cardOpen:false,
+        eachUserPayment:null
+    });
+
+    const [confirmationBoxOpen,setConfirmationBoxOpen]=useState(false)
+
+    const [cardDetails2,setCardDetails2]=useState({
+        methodName:"",
+        cardOpen:false,
+        eachUserPayment:null
+    })
+
+    const splitMethods={
+        markAsPaid,
+        markAsReceived,
+        rejectPayment,
+        confirmPayment
+    }
     const [paymentRecord,setPaymentRecord]=useState({
-        personsUsername,
-        amount,
-        splitId,
-        isThereATransaction,
-        maskedAccountno
+        personsUsername:"",
+        amount:0,
+        splitId:"",
+        isThereATransaction:false,
+        maskedAccountno:""
     });
 
     const [formattedDate,setFormattedDate]=useState(null)
@@ -62,42 +89,153 @@ const ExpenseSplitEach = () => {
         }
     }
 
-    async function markAsPaid(eachUserPaymentId) {
-        setPaymentRecord(prev=>({
+    function editEachUserPayment(eachUserPaymentId,newStatus){
+        setExpenseDetails(prev=>({
             ...prev,
-            splitId:expenseDetails.spltiId,
+            eachUserPayments:prev.eachUserPayments?.map((eachUserPayment)=>eachUserPayment.id===eachUserPaymentId ? {...eachUserPayment,eachPaymentStatus:newStatus}:eachUserPayment)
         }))
+        setMyUserPayment(prev => prev?.map(eachUserPayment => eachUserPayment.id === eachUserPaymentId ? { ...eachUserPayment, eachPaymentStatus: newStatus } : eachUserPayment ) );
+    }
+
+    async function markAsPaid(eachUserPaymentId,paymentRecord) {
+        const updatedPaymentRecord={
+            ...paymentRecord,
+            splitId:id
+        }
         setLoadingItems(
             {
                 id:eachUserPaymentId,
                 action:"MarkAsPaid"
             }
         )
-        if(!checkPaymentRecord()){
+        if(!checkPaymentRecord("MarkAsPaid",updatedPaymentRecord)){
+            setLoadingItems(null)
             return;
         }
         try{
-            const response=await axios.post(`${import.meta.env.VITE_BACKEND_URL}/split/markaspaid`,paymentRecord,{
+            const response=await axios.post(`${import.meta.env.VITE_BACKEND_URL}/split/markaspaid`,updatedPaymentRecord,{
                 headers:{
                     Authorization:`Bearer ${token}`
                 }
             })
             toast.success(response?.data?.msg);
+            editEachUserPayment(eachUserPaymentId,"AWAITING_CONFIRMATION")
+
         }catch(err){
             toast.error(err?.response?.data.msg||"Something went wrong.")
-            setCardOpen(false)
         }
         finally{
+            setLoadingItems(null)
+            setCardDetails(null)
+        }
+    }
+
+    async function markAsReceived(eachUserPaymentId,paymentRecord) {
+        const updatedPaymentRecord={
+            ...paymentRecord,
+            splitId:id
+        }
+        setLoadingItems(
+            {
+                id:eachUserPaymentId,
+                action:"MarkAsReceived"
+            }
+        )
+        if(!checkPaymentRecord("MarkAsReceived",updatedPaymentRecord)){
+            setLoadingItems(null)
+            return;
+        }
+        try{
+            const response=await axios.post(`${import.meta.env.VITE_BACKEND_URL}/split/markasreceived`,updatedPaymentRecord,{
+                headers:{
+                    Authorization:`Bearer ${token}`
+                }
+            })
+            toast.success(response?.data?.msg);
+            editEachUserPayment(eachUserPaymentId,"PAID")
+
+        }catch(err){
+            toast.error(err?.response?.data.msg||"Something went wrong.")
+        }
+        finally{
+            setCardDetails(null)
             setLoadingItems(null)
         }
     }
 
-    function checkPaymentRecord(){
-        if(paymentRecord.maskedAccountno.trim().length===0){
+    async function rejectPayment(eachUserPaymentId,paymentRecord){
+        const updatedPaymentRecord={
+            ...paymentRecord,
+            splitId:id
+        }
+        setLoadingItems(
+            {
+                id:eachUserPaymentId,
+                action:"RejectPayment"
+            }
+        )
+        if(!checkPaymentRecord("RejectPayment",updatedPaymentRecord)){
+            setLoadingItems(null)
+            return;
+        }
+        try{
+            const response=await axios.post(`${import.meta.env.VITE_BACKEND_URL}/split/rejectpayment`,updatedPaymentRecord,{
+                headers:{
+                    Authorization:`Bearer ${token}`
+                }
+            })
+            toast.success(response?.data?.msg);
+            editEachUserPayment(eachUserPaymentId,"REJECTED")
+        }catch(err){
+            console.log(paymentRecord)
+            toast.error(err?.response?.data.msg||"Something went wrong.")
+        }
+        finally{
+            setCardDetails2(null)
+            setLoadingItems(null)
+        }
+    }
+
+    async function confirmPayment(eachUserPaymentId,paymentRecord){
+        const updatedPaymentRecord={
+            ...paymentRecord,
+            splitId:id
+        }
+        setLoadingItems(
+            {
+                id:eachUserPaymentId,
+                action:"ConfirmPayment"
+            }
+        )
+        if(!checkPaymentRecord("ConfirmPayment",updatedPaymentRecord)){
+            console.log(updatedPaymentRecord)
+            setLoadingItems(null)
+            return;
+        }
+        try{
+            const response=await axios.post(`${import.meta.env.VITE_BACKEND_URL}/split/confirmpayment`,updatedPaymentRecord,{
+                headers:{
+                    Authorization:`Bearer ${token}`
+                }
+            })
+            toast.success(response?.data?.msg);
+            editEachUserPayment(eachUserPaymentId,"PAID")
+        }catch(err){
+            toast.error(err?.response?.data.msg||"Something went wrong.")
+        }
+        finally{
+            setCardDetails2(null)
+            setLoadingItems(null)
+        }
+    }
+
+    function checkPaymentRecord(methodName,paymentRecord){
+        console.log(paymentRecord)
+        if(methodName!=="RejectPayment" && paymentRecord.maskedAccountno?.trim().length<=0){
             toast.error("Select any account.")
             return false;
         }
-        if(paymentRecord.personsUsername.trim().length===0 || paymentRecord.amount<=0 || paymentRecord.splitId.trim().length===0){
+        if(paymentRecord.personsUsername?.trim().length===0 || paymentRecord.amount<=0 || paymentRecord.splitId?.trim().length===0){
             toast.error("Re-login once");
             navigate("/login")
             return false;
@@ -105,6 +243,23 @@ const ExpenseSplitEach = () => {
         return true;
     }
 
+    async function deleteSplit(){
+        setDeleting(true);
+        try{
+            const response=await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/split/${id}`,{
+            headers:{
+                Authorization:`Bearer ${token}`
+            }
+            })
+            toast.success(response?.data?.msg);
+            navigate(-1);
+        }catch(err){
+            toast.error(err?.response?.data.msg||"Something went wrong.")
+        }
+        finally{
+            setDeleting(false);
+        }
+    }
     useEffect(()=>{
         getExpenseSplitById(id);
     },[])
@@ -143,14 +298,57 @@ const ExpenseSplitEach = () => {
         <div className='flex flex-col gap-2 '>
             <span className='text-slate-300 font-semibold'>PARTICIPANTS</span>
             <motion.div initial={{opacity:0.6,y:20}} animate={{opacity:1,y:0}} className='bg-gray-900'>
-                <EachUserPaymentCard eachUserPayment={myUserPayment[0]} isLoggedInUserOwner={isLoggedInUserOwner} loadingItems={loadingItems} setPaymentRecord={setPaymentRecord} markAsPaid={markAsPaid} cardOpen={cardOpen} setCardOpen={setCardOpen}/>
+                {myUserPayment[0] && 
+                <EachUserPaymentCard eachUserPayment={myUserPayment[0]}  cardDetails2={cardDetails2} setCardDetails2={setCardDetails2} loadingItems={loadingItems} isLoggedInUserOwner={isLoggedInUserOwner} splitMethods={splitMethods} cardDetails={cardDetails} setCardDetails={setCardDetails}/>
+                }
             </motion.div>
             {expenseDetails?.eachUserPayments.map((eachUserPayment,index)=>(
                 <motion.div initial={{opacity:0.6,y:20}} animate={{opacity:1,y:0}} className='bg-gray-900' key={index}>
-                    {eachUserPayment.name!=="You" && <EachUserPaymentCard eachUserPayment={eachUserPayment} loadingItems={loadingItems} isLoggedInUserOwner={isLoggedInUserOwner} setPaymentRecord={setPaymentRecord} markAsPaid={markAsPaid} cardOpen={cardOpen} setCardOpen={setCardOpen}/> }
+                    {eachUserPayment.name!=="You" && <EachUserPaymentCard eachUserPayment={eachUserPayment} cardDetails2={cardDetails2} setCardDetails2={setCardDetails2} paymentRecord={paymentRecord} setPaymentRecord={setPaymentRecord} loadingItems={loadingItems} isLoggedInUserOwner={isLoggedInUserOwner} splitMethods={splitMethods} cardDetails={cardDetails} setCardDetails={setCardDetails}/> }
                 </motion.div>
             ))}
         </div>
+        {expenseDetails && expenseDetails.paidByName==="You" && (
+            <motion.div initial={{opacity:0.5,y:20}} animate={{opacity:1,y:0}} transition={{duration:0.15}}  className='flex justify-between items-center w-full'>
+                <button className='bg-gray-600 rounded-xl p-3 w-[45%] flex gap-1 items-center justify-center' disabled={confirmationBoxOpen}><MdOutlineEdit/> Edit</button>
+                <button className='bg-red-600/20 text-red-500 rounded-xl border-red-500/40 border p-3 w-[45%] flex gap-1 items-center justify-center' onClick={()=>setConfirmationBoxOpen(true)}><AiTwotoneDelete/> Delete</button>
+            </motion.div>
+        )}
+        
+        <AnimatePresence mode='popLayout'>
+            {cardDetails && cardDetails.cardOpen &&(
+                <motion.div initial={{opacity:0.5,scale:0.25}} animate={{opacity:1,scale:1}} exit={{opacity:0,scale:0.5}} transition={{duration:0.25}} className='fixed z-10 flex justify-center items-center -mt-[70px] h-full w-[90%]'>
+                    <Dropdown paymentRecord={paymentRecord} setPaymentRecord={setPaymentRecord} cardDetails={cardDetails} setCardDetails={setCardDetails} loadingItems={loadingItems} splitMethods={splitMethods}/>
+                </motion.div>
+            )}
+        </AnimatePresence>
+
+        <AnimatePresence mode='popLayout'>
+            {cardDetails2 && cardDetails2.cardOpen &&(
+                <motion.div initial={{opacity:0.5,scale:0.25}} animate={{opacity:1,scale:1}} exit={{opacity:0,scale:0.5}} transition={{duration:0.25}} className='fixed z-10 flex justify-center items-center -mt-[70px] h-full w-[90%]'>
+                    <Dropdown2 paymentRecord={paymentRecord} setPaymentRecord={setPaymentRecord} cardDetails={cardDetails2} setCardDetails={setCardDetails2} loadingItems={loadingItems} splitMethods={splitMethods}/>
+                </motion.div>
+            )}
+        </AnimatePresence>
+        {/* Delete confirmation box */}
+        <AnimatePresence mode='popLayout'>
+            {confirmationBoxOpen &&(
+                <motion.div initial={{opacity:0.5,scale:0.25}} animate={{opacity:1,scale:1}} exit={{opacity:0,scale:0.5}} transition={{duration:0.25}} className='fixed z-10 flex justify-center items-center -mt-[70px] h-full w-[90%]'>
+                   <div className='flex flex-col bg-black/50 backdrop-blur-xl items-center justify-center gap-3 rounded-lg px-6 py-10 shadow-lg shadow-gray-500/30'>
+                        <div className='rounded-full p-3 bg-red-600/30'>
+                            <RiDeleteBin5Line size={25}/>
+                        </div>
+                        <h2 className='text-lg font-semibold'>Delete Expense ?</h2>
+                        <span className='text-center w-full text-sm text-slate-400'>This will remove "{expenseDetails?.purpose}" and its corresponding transactions.</span>
+                        <div className='flex justify-between items-center w-full'>
+                            <button className='bg-gray-600 w-[45%] py-2 rounded-lg' disabled={deleting} onClick={()=>setConfirmationBoxOpen(false)}>Cancel</button>
+                            <button className='bg-red-600 w-[45%] py-2 rounded-lg' disabled={deleting} onClick={deleteSplit}>{deleting ? "Deleting..." : "Delete"}</button>
+                        </div>
+                   </div>
+                </motion.div>
+            )}
+        </AnimatePresence>
+        
     </div>
   )
 }

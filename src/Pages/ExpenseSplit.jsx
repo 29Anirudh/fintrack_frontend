@@ -46,7 +46,7 @@ const ExpenseSplit = () => {
                     <h1 className='font-bold text-lg'>Split Expenses</h1>
                     <span className='text-xs text-slate-300'>Track shared expenses.</span>
                 </div>
-                <button className='text-sm bg-violet-700 rounded-2xl px-4 hover:bg-violet-800'>+ Split Expense</button>
+                <button className='text-sm bg-violet-700 rounded-2xl px-4 hover:bg-violet-800' onClick={()=>navigate("/splits/new")}>+ Split Expense</button>
             </motion.div>
             <motion.div initial={{opacity:0.5,y:20}} animate={{opacity:1,y:0}} transition={{duration:0.15}} className='flex w-full justify-between'>
                 <div className='w-[48%] flex flex-col bg-gray-900 rounded-xl p-4 justify-center items-start'>

@@ -42,18 +42,18 @@ const TransactionsPage = ({ setCurrentBankAccount }) => {
   const analytics = [
     {
       title: "CREDIT",
-      value: `₹${overview.credit_money}`
+      value: overview.credit_money
     },
     {
       title: "DEBIT",
-      value: `₹${overview.debit_money}`
+      value: overview.debit_money
     },
     {
       title: "NET",
-      value: `₹${overview.credit_money - overview.debit_money}`
+      value: overview.credit_money - overview.debit_money
     },
   ]
-
+  
   const filteredTransactions = transactionDetails?.filter((transaction) => {
     const searchB = transaction.description.toLowerCase().includes(searchKey.toLowerCase());
     const matchesType =
@@ -69,15 +69,19 @@ const TransactionsPage = ({ setCurrentBankAccount }) => {
     )
   }
   return (
+    
     <div className='min-h-[calc(100vh-300px)] mt-[70px] pb-[100px] px-4 text-white flex flex-col gap-2  relative'>
       <h1 className='text-2xl font-bold w-full'>Transactions</h1>
       <motion.div className='w-full flex flex-col gap-4' initial={{ opacity: 0,y: 20 }} animate={{ opacity: 1,y: 0 }} transition={{ duration: 0.5 }}>
         <div className='flex justify-between backdrop-blur-lg p-4 bg-white/10 rounded-lg w-full border border-slate-500'>
           {analytics.map((analytic, index) => (
-            <div className={`flex flex-col p-1 pr-8 justify-center items-center gap-2 ${analytic.title!=="NET"?"border-r border-white/10":""}`} key={index} >
+            <div className={`flex flex-col w-[33%] justify-center items-center gap-2 ${analytic.title!=="NET" && "border-r border-white/10"}`} key={index} >
               <span className='text-md text-slate-500'>{analytic.title}</span>
-              <span className={`text-2xl font-bold ${analytic.title === "CREDIT" ? "text-green-600" : analytic.title === "DEBIT" ? "text-red-700" : (analytic.title === "NET" && analytic.value >= 0) ? "text-green-600" : "text-red-700"}`}>{analytic.value}</span>
-              {(analytic.title === "CREDIT" || (analytic.title === "NET" && analytic.value >= 0)) ? <div className='text-green-600 ring-1 ring-green-600 rounded-full bg-green-500/20 w-6 h-6 flex justify-center items-center p-2'><FaLongArrowAltDown size={20}/></div> : (<div className='text-red-700 ring-1 ring-red-600 rounded-full bg-red-500/20 w-6 h-6 flex justify-center items-center p-2'><FaLongArrowAltUp/></div>)}
+              <span className={` text-lg font-bold ${analytic.title === "CREDIT" ? "text-green-600" : analytic.title === "DEBIT" ? "text-red-700" : (analytic.title === "NET" && analytic.value >= 0) ? "text-green-600" : "text-red-700"}`}>₹{analytic.value}</span>
+              {(analytic.title === "CREDIT" || (analytic.title === "NET" && analytic.value >= 0)) ? 
+                <div className='text-green-600 ring-1 ring-green-600 rounded-full bg-green-500/20 w-6 h-6 flex justify-center items-center p-2'><FaLongArrowAltDown size={20}/></div> 
+                :
+                (<div className='text-red-700 ring-1 ring-red-600 rounded-full bg-red-500/20 w-6 h-6 flex justify-center items-center p-2'><FaLongArrowAltUp/></div>)}
             </div>
           ))}
         </div>
